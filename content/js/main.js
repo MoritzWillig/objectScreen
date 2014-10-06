@@ -4,6 +4,8 @@ idf=new IdFactory("sc-object_id_");
 focusedSObj=[];
 activeOnFocus=[];
 
+pressedKeys={};
+
 function focusSObj(sObj,keepFocused) {
   if (keepFocused!=true) { clearFocus(); }
   if (sObj!=undefined) {
@@ -64,7 +66,28 @@ $(document).ready(function() {
   connectReciver();
   
   menu=$("#menu");
-  objscreen=$("#screen").click(function() { console.log('unfocus'); focusSObj() });
+  objscreenBg=$("#screenBackground").mousedown(function(e) {
+    if (!e.ctrlKey) { focusSObj(); }
+  }).areaSelect({
+    select:function(e,args) {
+      addFocus(sObjectsById[$(args.newSelection).attr("id")]);
+    },
+    deselect:function(e,args) {
+      removeFocus(sObjectsById[$(args.remSelection).attr("id")]);
+    },
+    finish:function(e,args) {
+      var selection=args.selected;
+      //addFocus();
+    }
+  });
+  objscreenBg.areaSelect("option","selectionClass",undefined);
+  
+  objscreen=$("#screen").draggable({
+    //handle:"#screenBackground",
+    start:function(e,ui) {
+      if (!pressedKeys[32]) { return false; }
+    }
+  });
   footer=$("#footer");
   jsonfield=$("#data");
   
@@ -105,7 +128,7 @@ $(document).ready(function() {
     div.clone().addClass("sc-object-controls").text("o")
   ).append(
     table.clone().addClass("sc-object-content")
-  ).click(function(e) {
+  ).mousedown(function(e) {
     console.log("focus");
     
     var sObj=sObjectsById[$(this).attr("id")];
@@ -117,6 +140,12 @@ $(document).ready(function() {
     }
     
     e.stopPropagation();
+  });
+  
+  $(window).keydown(function(e) {
+    pressedKeys[e.which]=true;
+  }).keyup(function(e) {
+    pressedKeys[e.which]=false;
   });
   
   //create footer
@@ -171,6 +200,11 @@ function show(desc) { //console.log("show",desc);
   };
   
   sObjectsById[id]=sObj;
+  
+  var selectables=objscreenBg.areaSelect("option","selectables");
+  selectables.push(box);
+  objscreenBg.areaSelect("option","selectables",selectables); 
+  
   descriptors .push(desc );
   sObjects.push(sObj);
   update(sObj);
