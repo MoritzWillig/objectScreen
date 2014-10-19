@@ -19,3 +19,7 @@ IdFactory.prototype.newId=function() {
 
 IdFactory.prototype.postfix="";
 IdFactory.prototype.prefix ="";
+
+if ((typeof module!="undefined") && (module.exports)) {
+  module.exports=IdFactory;
+}

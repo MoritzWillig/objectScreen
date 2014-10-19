@@ -1,0 +1,9 @@
+{
+  "name": "TestServer",
+  "description": "Test server application, for network descriptors",
+  "main": "./index.js",
+  "dependencies": {
+    "websocket": "1.0.x"
+  },
+  "private": true
+}

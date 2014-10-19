@@ -1,2 +1,4 @@
 libs/*
 !libs/libs.md
+
+node_modules

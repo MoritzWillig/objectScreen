@@ -108,7 +108,7 @@
             self._trigger("move", e, {selected:selected, selectionUi:selectionUi, area:area});
           }
         });
-        $([t,window]).mouseup(function(e) { console.log("up"); //$([$(".s").first(),$(".s")[1]]).detach();
+        $([t,window]).mouseup(function(e) {
           if ((isActive(e)) && (triggered)) {
             self._trigger("finish", e, {selected:selected, selectionUi:selectionUi, area:area});
             

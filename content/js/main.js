@@ -1,6 +1,4 @@
 
-idf=new IdFactory("sc-object_id_");
-
 focusedSObj=[];
 activeOnFocus=[];
 
@@ -69,6 +67,9 @@ $(document).ready(function() {
   objscreenBg=$("#screenBackground").mousedown(function(e) {
     if (!e.ctrlKey) { focusSObj(); }
   }).areaSelect({
+    start:function(e,args) {
+      if (pressedKeys[32]) { return false; }
+    },
     select:function(e,args) {
       addFocus(sObjectsById[$(args.newSelection).attr("id")]);
     },
@@ -120,6 +121,15 @@ $(document).ready(function() {
   span.clone().text(" | ").appendTo(menu);
   div.clone().button({"label":"load from json"}).appendTo(menu).click(insertFromJSON);
   
+  span.clone().text(" | | | ").appendTo(menu);
+  input.clone().val("ws:127.0.0.1:8080").attr("id","connectNetwork_input").addClass("ui-widget").addClass("ui-input").appendTo(menu);
+  div.clone().button({"label":"connect to remote"}).appendTo(menu).click(connectToNetwork);
+  
+  span.clone().text(" | ").appendTo(menu);
+  span.clone().text("no connection").appendTo(menu);
+  
+  
+  
   screenBox=div.clone().addClass("sc-object").css("position","absolute").append(
     span.clone().addClass("sc-object-title").text("Title")
   ).append(
@@ -129,7 +139,7 @@ $(document).ready(function() {
   ).append(
     table.clone().addClass("sc-object-content")
   ).mousedown(function(e) {
-    console.log("focus");
+    //console.log("focus");
     
     var sObj=sObjectsById[$(this).attr("id")];
     
@@ -180,134 +190,6 @@ $(document).ready(function() {
   focusSObj();
 });
 
-var sObjects=[];
-var descriptors=[];
-var sObjectsById={};
-
-function show(desc) { //console.log("show",desc);
-  var id=idf.newId();
-  var box=screenBox.clone(true).appendTo(objscreen).css("left",100).css("top",100).attr("id",id);
-  jsPlumb.draggable(box,{
-    //containment:"parent" //prevents moving element outside of screen
-  });
-
-  var sObj={
-    descriptor:desc,
-    attr:{},
-    gui:box,
-    links:[],
-    id:id
-  };
-  
-  sObjectsById[id]=sObj;
-  
-  var selectables=objscreenBg.areaSelect("option","selectables");
-  selectables.push(box);
-  objscreenBg.areaSelect("option","selectables",selectables); 
-  
-  descriptors .push(desc );
-  sObjects.push(sObj);
-  update(sObj);
-}
-
-function insert(desc,objs) { //console.log("insert",desc);
-  var idx=descriptors.indexOf(desc);
-  if (idx==-1) {
-    show(desc);
-  } else {
-    update(sObjects[idx],objs);
-  }
-}
-
-function update(sObj,objs) { //console.log("update",sObj);
-  //prevent infinite loop
-  if (!objs) { objs=[]; }
-  if (objs.indexOf(sObj)==-1) { objs.push(sObj); } else { return; }
-  
-  while (sObj.links.length>0) {
-    var link=sObj.links[0];
-    jsPlumb.detach(link.connection);
-    
-    //console.log("---",link,link.connection.endpoints);
-    //link.gui.endpoints is null ...
-    //getEndpoints
-    //while (link.connection.endpoints!=null) { console.log("e");
-    //  jsPlumb.deleteEndpoint(link.connection.endpoints[0],true);
-    //}
-    //jsPlumb.removeAllEndpoints(link.source.gui,true);
-    //jsPlumb.removeAllEndpoints(link.gui,true);
-    //jsPlumb.detach(link.gui);
-    
-    sObj.links.shift();
-  }
-  
-  sObj.descriptor.getAttrs(function(attrs) { //console.log("listing",attrs);
-    for (var i in attrs) { //console.log("iterating val",name);
-      sObj.descriptor.getAttr(attrs[i],function(name,val) {
-        var curr=sObj.attr[name];
-        var isDesc=(val instanceof ObjectDescriptor);
-        //new attribute
-        if (curr==undefined) {
-          var newEl=scObjectEntry.clone();
-          sObj.attr[name]={
-            gui:newEl,
-            guiDesc:newEl.find('.sc-object-attr-desc').text(name),
-            guiVal:newEl.find('.sc-object-attr-val'),
-          };
-          sObj.gui.find('.sc-object-content').append(newEl);
-          curr=sObj.attr[name];
-          
-          if (isDesc) { //console.log(">>> inserting sub",name);
-            insert(val,objs);
-          } //console.log("<<< inserting sub",name);
-        }
-        
-        //update
-        if (isDesc) {
-          //shortcut -> descriptors only hold objects
-          cb("object");
-        } else {
-          cb(typeof val);
-        }
-        
-        function cb(type) {
-          switch (type) {
-          case "object": //make link
-            if (val!=null) {
-              var id=idf.newId();
-              var source=div.clone().html("<i>object</i>");
-              curr.guiVal.empty().append(source).attr("id",id);
-              
-              var idx=descriptors.indexOf(val);
-              var connection=jsPlumb.connect({
-                source:source,
-                target:sObjects[idx].gui,
-                deleteEndpointsOnDetach:true
-              });
-              
-              var link={
-                id:id,
-                from:sObj, //object creating the connection
-                source:source, //attribute gui linked
-                dest:sObjects[idx], //target gui linked
-                connection:connection
-              }
-              sObj.links.push(link);
-              
-            } else {
-              curr.guiVal.html("<i>null</i>");
-            }
-            break;
-          default:
-            curr.guiVal.text(val);
-          }
-        }
-      });
-    }
-  });
-}
-
-
 function insertFromJSON() {
   var str=jsonfield.val();
   var obj;
@@ -327,6 +209,12 @@ function insertFromGlobal() {
   provideObject(window[name]);
 }
 
+function connectToNetwork() {
+  var address=$("#connectNetwork_input").val();
+  connectNetworkReciver(address);
+}
+
+
 function provideObject(obj) {
   //add object to provider
   provider.produceId(obj,function(id,desc) {
@@ -334,7 +222,7 @@ function provideObject(obj) {
       //the provider can now deliver obj, get descriptor from reciver
       var id=provider.getId(obj);
       reciver.getDescriptorById(id,function(descriptor) {
-        insert(descriptor);
+        displayDescriptor(descriptor);
         
         var idx=descriptors.indexOf(descriptor);
         structTree(sObjects[idx],-1);
