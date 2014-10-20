@@ -82,7 +82,8 @@ function update(sObj,objs,callback) { //console.log("update",sObj);
     
     var count=attrs.length;
     for (var i in attrs) { //console.log("iterating val",name);
-      sObj.descriptor.getAttr(attrs[i],function(name,val) {
+      sObj.links.push(null);
+      sObj.descriptor.getAttr(attrs[i],(function(i) { return function(name,val) {
         var curr=sObj.attr[name];
         var isDesc=(val instanceof ObjectDescriptor);
         
@@ -137,7 +138,7 @@ function update(sObj,objs,callback) { //console.log("update",sObj);
                 dest:sObjects[idx], //target gui linked
                 connection:connection
               }
-              sObj.links.push(link);
+              sObj.links[i]=link;
               
             } else {
               curr.guiVal.html("<i>null</i>");
@@ -148,9 +149,18 @@ function update(sObj,objs,callback) { //console.log("update",sObj);
           }
 
           count--;
-          if (count==0) { callback(); }
+          if (count==0) { finish(); }
         }
+      }})(i));
+    }
+    
+    function finish() {
+      //clean links
+      sObj.links=sObj.links.filter(function(link) {
+        return (link!=null);
       });
+      
+      callback();
     }
   });
 }
