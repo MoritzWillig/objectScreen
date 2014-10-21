@@ -107,9 +107,10 @@ ObjectScreenServer.prototype.wsServer;
 ObjectScreenServer.prototype.provideObject=function provideObject(object,name) {
   if (this.objects.has(obj)) { return; }
   
+  var self=this;
   //add object to provider
   this.provider.produceId(obj,function(id,desc) {
-    this.objects.set(obj,{
+    self.objects.set(obj,{
       id:id,
       name:name
     });
@@ -138,11 +139,11 @@ ObjectScreenServer.prototype.originIsAllowed=function originIsAllowed(origin) {
 
 
 
-if ((typeof module!="undefined") && (module.exports)) {
+if (!!module.parent) {
   module.exports=ObjectScreenServer;
 } else {
   //stand-alone test server
-  srv=new ObjectScreenServer("127.0.0.1");
+  server=new ObjectScreenServer("127.0.0.1");
 
   //create test object
   var obj={
@@ -155,6 +156,6 @@ if ((typeof module!="undefined") && (module.exports)) {
   obj.nestedObj.d=obj;
   obj.nestedObj.e=obj;
 
-  provideObject(obj);
+  server.provideObject(obj);
 }
 

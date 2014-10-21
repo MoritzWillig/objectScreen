@@ -222,10 +222,10 @@ function provideObject(obj) {
       //the provider can now deliver obj, get descriptor from reciver
       var id=provider.getId(obj);
       reciver.getDescriptorById(id,function(descriptor) {
-        displayDescriptor(descriptor);
-        
-        var idx=descriptors.indexOf(descriptor);
-        structTree(sObjects[idx],-1);
+        displayDescriptor(descriptor,undefined,function() {
+          var idx=descriptors.indexOf(descriptor);
+          structTree(sObjects[idx],-1);
+        });
       });
     });
   });
